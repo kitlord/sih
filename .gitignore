@@ -1,0 +1,31 @@
+# Python / Django
+backend/.venv/
+backend/**/__pycache__/
+backend/**/*.pyc
+backend/media/
+backend/staticfiles/
+backend/db.sqlite3
+backend/.env
+*.egg-info/
+
+# Node / Hardhat
+contracts/node_modules/
+contracts/artifacts/
+contracts/cache/
+contracts/deployments/*.json
+!contracts/deployments/.gitkeep
+
+# Flutter
+client/.dart_tool/
+client/.flutter-plugins
+client/.flutter-plugins-dependencies
+client/build/
+client/.pub-cache/
+# pubspec.lock IS committed (this is an app, not a published package).
+
+# Editors / OS
+.DS_Store
+*.swp
+*.iml
+.idea/
+.vscode/

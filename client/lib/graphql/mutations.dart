@@ -1,0 +1,77 @@
+import 'fragments.dart';
+
+const String registerMutation = r'''
+mutation Register($username: String!, $email: String!, $password: String!) {
+  register(username: $username, email: $email, password: $password) {
+    token
+    user { id username email role }
+  }
+}
+''';
+
+const String loginMutation = r'''
+mutation Login($username: String!, $password: String!) {
+  login(username: $username, password: $password) {
+    token
+    user { id username email role }
+  }
+}
+''';
+
+const String createApiaryMutation = r'''
+mutation CreateApiary($name: String!, $locationDescription: String) {
+  createApiary(name: $name, locationDescription: $locationDescription) {
+    id
+    name
+    locationDescription
+    createdAt
+  }
+}
+''';
+
+const String createHiveMutation = r'''
+mutation CreateHive($apiaryId: ID!, $label: String!, $hiveType: String) {
+  createHive(apiaryId: $apiaryId, label: $label, hiveType: $hiveType) {
+    id
+    label
+    hiveType
+    isActive
+  }
+}
+''';
+
+final String createHoneyBatchMutation = '''
+$honeyBatchFields
+mutation CreateHoneyBatch(\$apiaryId: ID!, \$hiveIds: [ID!]!, \$harvestDate: String!, \$quantityKg: Float!, \$floralSource: String!) {
+  createHoneyBatch(apiaryId: \$apiaryId, hiveIds: \$hiveIds, harvestDate: \$harvestDate, quantityKg: \$quantityKg, floralSource: \$floralSource) {
+    ...HoneyBatchFields
+  }
+}
+''';
+
+final String recordProcessingEventMutation = '''
+$honeyBatchFields
+mutation RecordProcessingEvent(\$batchId: String!, \$method: String!, \$notes: String) {
+  recordProcessingEvent(batchId: \$batchId, method: \$method, notes: \$notes) {
+    ...HoneyBatchFields
+  }
+}
+''';
+
+final String recordQualityCheckMutation = '''
+$honeyBatchFields
+mutation RecordQualityCheck(\$batchId: String!, \$result: String!, \$moistureContent: Float, \$purityNotes: String) {
+  recordQualityCheck(batchId: \$batchId, result: \$result, moistureContent: \$moistureContent, purityNotes: \$purityNotes) {
+    ...HoneyBatchFields
+  }
+}
+''';
+
+final String packageBatchMutation = '''
+$honeyBatchFields
+mutation PackageBatch(\$batchId: String!, \$packageCode: String!, \$unitCount: Int!) {
+  packageBatch(batchId: \$batchId, packageCode: \$packageCode, unitCount: \$unitCount) {
+    ...HoneyBatchFields
+  }
+}
+''';
