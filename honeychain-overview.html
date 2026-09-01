@@ -1,0 +1,474 @@
+<!doctype html>
+<title>Honey Chain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zilla+Slab:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F1ECDA; --surface:#FBF8EE; --surface-2:#E7DFC4;
+    --text:#211A12; --text-soft:#6E6250;
+    --honey:#B97A1F; --honey-strong:#8F5E15; --honey-soft:#EAD3A0;
+    --hive:#3E5330; --hive-strong:#2C3D22; --hive-soft:#D3DEC6;
+    --brick:#8C4636; --brick-soft:#E7CFC7;
+    --border: rgba(33,26,18,0.16); --shadow: rgba(33,26,18,0.10);
+    --radius: 3px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1B160F; --surface:#241D13; --surface-2:#2E2519;
+      --text:#F1ECDA; --text-soft:#B7AB8C;
+      --honey:#E3A83D; --honey-strong:#F0BE63; --honey-soft:#4A3A1C;
+      --hive:#86A768; --hive-strong:#A9C78C; --hive-soft:#2C3A22;
+      --brick:#D28D7C; --brick-soft:#442A24;
+      --border: rgba(241,236,218,0.18); --shadow: rgba(0,0,0,0.45);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1B160F; --surface:#241D13; --surface-2:#2E2519;
+    --text:#F1ECDA; --text-soft:#B7AB8C;
+    --honey:#E3A83D; --honey-strong:#F0BE63; --honey-soft:#4A3A1C;
+    --hive:#86A768; --hive-strong:#A9C78C; --hive-soft:#2C3A22;
+    --brick:#D28D7C; --brick-soft:#442A24;
+    --border: rgba(241,236,218,0.18); --shadow: rgba(0,0,0,0.45);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:'Work Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size:16px; line-height:1.65; -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{ font-family:'Zilla Slab', Georgia, serif; text-wrap:balance; font-weight:600; margin:0; }
+  code, .mono, .num{ font-family:'IBM Plex Mono','SFMono-Regular',Consolas,monospace; font-variant-numeric:tabular-nums; }
+  a{ color:var(--honey-strong); text-decoration-thickness:1.5px; text-underline-offset:2px; }
+  a:focus-visible, button:focus-visible, summary:focus-visible{ outline:2px solid var(--honey); outline-offset:2px; }
+
+  .wrap{ max-width:1180px; margin:0 auto; padding:0 28px 120px; }
+
+  /* ---------- Hero ---------- */
+  header.hero{
+    padding:64px 0 40px; border-bottom:1px solid var(--border);
+    background:
+      radial-gradient(ellipse 900px 420px at 84% -10%, var(--honey-soft) 0%, transparent 60%);
+  }
+  .eyebrow{
+    font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--text-soft); display:flex; align-items:center; gap:10px;
+  }
+  .eyebrow::before{ content:""; width:22px; height:1px; background:var(--honey); display:inline-block; }
+  h1.title{ font-size:clamp(2.4rem,5vw,3.4rem); margin:14px 0 6px; letter-spacing:-0.01em; }
+  p.tagline{ font-size:1.15rem; max-width:62ch; color:var(--text-soft); margin:0 0 28px; }
+  .chips{ display:flex; flex-wrap:wrap; gap:8px; }
+  .chip{
+    font-family:'IBM Plex Mono',monospace; font-size:0.78rem; padding:6px 11px;
+    border:1px solid var(--border); border-radius:100px; color:var(--text-soft); background:var(--surface);
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .chip b{ color:var(--text); font-weight:600; }
+  .chip.pass::before{ content:"✓"; color:var(--hive); font-weight:700; }
+
+  /* ---------- Layout: index rail + content ---------- */
+  .layout{ display:grid; grid-template-columns:210px minmax(0,1fr); gap:56px; padding-top:44px; align-items:start; }
+  nav.index{ position:sticky; top:28px; display:flex; flex-direction:column; gap:2px; }
+  nav.index a{
+    font-family:'IBM Plex Mono',monospace; font-size:0.82rem; color:var(--text-soft); text-decoration:none;
+    padding:7px 0 7px 14px; border-left:2px solid var(--border); transition:border-color .15s, color .15s;
+  }
+  nav.index a:hover, nav.index a:focus-visible{ color:var(--text); border-left-color:var(--honey); }
+  nav.index .n{ color:var(--honey-strong); margin-right:8px; }
+
+  main{ display:flex; flex-direction:column; gap:76px; min-width:0; }
+  section{ scroll-margin-top:24px; }
+  .s-head{ display:flex; align-items:baseline; gap:14px; margin-bottom:18px; }
+  .s-num{ font-family:'IBM Plex Mono',monospace; font-size:1rem; color:var(--honey-strong); }
+  h2.s-title{ font-size:1.7rem; }
+  .prose{ max-width:70ch; }
+  .prose p{ margin:0 0 14px; }
+  .prose p:last-child{ margin-bottom:0; }
+
+  /* ---------- Panels / cards ---------- */
+  .panel{
+    background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+    padding:26px 28px; position:relative;
+  }
+  .panel::before, .panel::after{
+    content:""; position:absolute; width:9px; height:9px; border:1px solid var(--border); top:-1px;
+  }
+  .panel::before{ left:-1px; border-right:none; border-bottom:none; }
+  .panel::after{ right:-1px; border-left:none; border-bottom:none; }
+  figure{ margin:0; }
+  figure.diagram{ overflow-x:auto; }
+  figure.diagram svg{ display:block; width:100%; height:auto; min-width:560px; }
+  figcaption{ font-size:0.86rem; color:var(--text-soft); margin-top:14px; border-top:1px solid var(--border); padding-top:12px; }
+
+  /* ---------- Tables ---------- */
+  .tbl-wrap{ overflow-x:auto; }
+  table{ border-collapse:collapse; width:100%; min-width:560px; }
+  th, td{ text-align:left; padding:11px 16px; border-bottom:1px solid var(--border); vertical-align:top; font-size:0.94rem; }
+  th{ font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-soft); font-weight:500; }
+  td:first-child, th:first-child{ padding-left:0; }
+  tr:last-child td{ border-bottom:none; }
+  td .mono{ font-size:0.88rem; }
+
+  /* ---------- Stat tiles ---------- */
+  .stats{ display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:14px; }
+  .stat{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px; }
+  .stat .num{ font-size:1.9rem; font-weight:600; color:var(--hive-strong); display:block; }
+  .stat .lbl{ font-size:0.84rem; color:var(--text-soft); }
+
+  /* ---------- Ledger / proof block ---------- */
+  .ledger{
+    background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius);
+    padding:20px 22px; font-family:'IBM Plex Mono',monospace; font-size:0.84rem; overflow-x:auto;
+  }
+  .ledger .row{ display:flex; gap:16px; padding:6px 0; border-bottom:1px dashed var(--border); white-space:nowrap; }
+  .ledger .row:last-child{ border-bottom:none; }
+  .ledger .stage{ width:150px; flex:none; color:var(--text); font-weight:600; }
+  .ledger .hash{ color:var(--text-soft); }
+  .verified{ color:var(--hive-strong); }
+  .verified::before{ content:"✓ "; }
+
+  /* ---------- Role table ---------- */
+  .roles{ display:grid; grid-template-columns:repeat(auto-fit,minmax(230px,1fr)); gap:16px; }
+  .role-card{ border:1px solid var(--border); border-radius:var(--radius); padding:20px 22px; background:var(--surface); }
+  .role-card .tag{ font-family:'IBM Plex Mono',monospace; font-size:0.72rem; letter-spacing:.08em; text-transform:uppercase; padding:3px 9px; border-radius:100px; display:inline-block; margin-bottom:12px; }
+  .role-card.beekeeper .tag{ background:var(--honey-soft); color:var(--honey-strong); }
+  .role-card.admin .tag{ background:var(--hive-soft); color:var(--hive-strong); }
+  .role-card.consumer .tag{ background:var(--surface-2); color:var(--text-soft); }
+  .role-card ul{ margin:0; padding-left:18px; font-size:0.92rem; color:var(--text-soft); }
+  .role-card li{ margin-bottom:6px; }
+  .role-card li::marker{ color:var(--text-soft); }
+
+  /* ---------- QA / decisions ---------- */
+  .qa{ display:flex; flex-direction:column; gap:22px; }
+  .qa dt{ font-family:'Zilla Slab',serif; font-size:1.05rem; font-weight:600; margin-bottom:6px; }
+  .qa dd{ margin:0; color:var(--text-soft); max-width:70ch; }
+
+  .callout{
+    border-left:3px solid var(--brick); background:var(--brick-soft); border-radius:0 var(--radius) var(--radius) 0;
+    padding:14px 18px; font-size:0.92rem; color:var(--text);
+  }
+  .callout b{ color:var(--brick); }
+
+  /* ---------- Code block ---------- */
+  pre.code{
+    background:var(--surface-2); border:1px solid var(--border); border-radius:var(--radius);
+    padding:18px 20px; overflow-x:auto; font-family:'IBM Plex Mono',monospace; font-size:0.84rem; line-height:1.7;
+  }
+  pre.code .c{ color:var(--text-soft); }
+
+  .tree{ font-family:'IBM Plex Mono',monospace; font-size:0.85rem; line-height:1.75; color:var(--text-soft); }
+  .tree b{ color:var(--text); font-weight:600; }
+
+  footer{ margin-top:90px; padding-top:24px; border-top:1px solid var(--border); font-size:0.85rem; color:var(--text-soft); display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+
+  @media (max-width:860px){
+    .layout{ grid-template-columns:1fr; }
+    nav.index{ position:static; flex-direction:row; overflow-x:auto; gap:14px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+    nav.index a{ border-left:none; border-bottom:2px solid var(--border); padding:4px 0; white-space:nowrap; }
+  }
+  @media (prefers-reduced-motion:no-preference){
+    a, nav.index a{ transition:color .15s ease, border-color .15s ease; }
+  }
+</style>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Technical dossier · hackathon submission</p>
+    <h1 class="title">Honey Chain</h1>
+    <p class="tagline">A jar of honey's full history — harvest, processing, quality check, packaging — written to a database and anchored on a blockchain, so a shopper can verify it themselves with a QR scan. No wallet, no account, no trust required.</p>
+    <div class="chips">
+      <span class="chip pass"><b>8 / 8</b>&nbsp;contract tests</span>
+      <span class="chip pass"><b>4 / 4</b>&nbsp;backend tests</span>
+      <span class="chip pass"><b>0</b>&nbsp;client lint issues</span>
+      <span class="chip">Flutter</span>
+      <span class="chip">Django</span>
+      <span class="chip">Strawberry GraphQL</span>
+      <span class="chip">PostgreSQL</span>
+      <span class="chip">Solidity</span>
+      <span class="chip">Hardhat</span>
+    </div>
+  </div>
+</header>
+
+<div class="wrap layout">
+  <nav class="index" aria-label="Section index">
+    <a href="#overview"><span class="n">00</span>Overview</a>
+    <a href="#architecture"><span class="n">01</span>Architecture</a>
+    <a href="#stack"><span class="n">02</span>Stack</a>
+    <a href="#data"><span class="n">03</span>Data &amp; trust</a>
+    <a href="#workflow"><span class="n">04</span>Workflow</a>
+    <a href="#roles"><span class="n">05</span>Roles</a>
+    <a href="#proof"><span class="n">06</span>Proof it runs</a>
+    <a href="#decisions"><span class="n">07</span>Decisions</a>
+    <a href="#run"><span class="n">08</span>Run it</a>
+  </nav>
+
+  <main>
+
+    <section id="overview">
+      <div class="s-head"><span class="s-num">00</span><h2 class="s-title">What this is</h2></div>
+      <div class="prose">
+        <p>Honey Chain is an MVP of a <b>beekeeping management and honey traceability system</b>. A beekeeper registers an apiary and its hives, harvests a batch, and records it moving through processing and quality verification. An admin approves the quality check and packages the batch, which mints a QR code. Anyone who scans that QR lands on a public page showing the batch's complete history — and every stage on that page is independently re-checked against a blockchain record at the moment the page loads, not just read out of a database that could, in principle, be edited.</p>
+        <p>The build follows one discipline throughout: <b>Postgres holds the real data, the chain holds only enough to prove it hasn't been tampered with.</b> That split is the whole point of the architecture below.</p>
+      </div>
+    </section>
+
+    <section id="architecture">
+      <div class="s-head"><span class="s-num">01</span><h2 class="s-title">Architecture &amp; trust boundary</h2></div>
+      <div class="panel">
+        <figure class="diagram">
+          <svg viewBox="0 0 1000 440" role="img" aria-label="Flutter client talks only to the Django GraphQL API over JWT; the API reads and writes Postgres directly, and is the only component holding the private key that signs transactions to the smart contract; it also makes a read-only verify call back from the contract.">
+            <defs>
+              <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+              </marker>
+            </defs>
+            <g fill="none" stroke="currentColor" stroke-width="1.4">
+              <rect x="30" y="190" width="220" height="90" rx="2"></rect>
+              <rect x="420" y="190" width="230" height="90" rx="2"></rect>
+              <rect x="740" y="40" width="220" height="80" rx="2"></rect>
+              <rect x="740" y="320" width="220" height="80" rx="2"></rect>
+            </g>
+            <g font-family="IBM Plex Mono, monospace" font-size="12.5" fill="currentColor">
+              <text x="140" y="225" text-anchor="middle" font-weight="600">Flutter Web Client</text>
+              <text x="140" y="244" text-anchor="middle" fill-opacity="0.65">Beekeeper · Admin · Consumer</text>
+              <text x="140" y="266" text-anchor="middle" fill-opacity="0.55" font-size="11">— never holds a key —</text>
+
+              <text x="535" y="225" text-anchor="middle" font-weight="600">Django + Strawberry</text>
+              <text x="535" y="244" text-anchor="middle">GraphQL API</text>
+              <text x="535" y="266" text-anchor="middle" fill-opacity="0.55" font-size="11">holds the one relayer private key</text>
+
+              <text x="850" y="75" text-anchor="middle" font-weight="600">PostgreSQL</text>
+              <text x="850" y="94" text-anchor="middle" fill-opacity="0.65" font-size="11">full application data</text>
+
+              <text x="850" y="355" text-anchor="middle" font-weight="600" font-size="12">HoneyChainRegistry.sol</text>
+              <text x="850" y="374" text-anchor="middle" fill-opacity="0.65" font-size="11">local testnet · chain 31337</text>
+            </g>
+            <g stroke="currentColor" stroke-width="1.4" fill="none">
+              <line x1="250" y1="235" x2="418" y2="235" marker-end="url(#arrow)"></line>
+              <polyline points="600,190 600,80 738,80" marker-end="url(#arrow)"></polyline>
+              <polyline points="580,280 580,345 738,345" marker-end="url(#arrow)"></polyline>
+              <polyline points="738,375 620,375 620,280" stroke-dasharray="4 4" marker-end="url(#arrow)"></polyline>
+            </g>
+            <g font-family="IBM Plex Mono, monospace" font-size="11.5" fill="currentColor">
+              <text x="334" y="223" text-anchor="middle">GraphQL over HTTPS</text>
+              <text x="334" y="255" text-anchor="middle" fill-opacity="0.6">Bearer JWT</text>
+
+              <text x="728" y="68" text-anchor="end">reads / writes rows</text>
+
+              <text x="728" y="333" text-anchor="end" fill="var(--honey-strong)">signs &amp; sends tx</text>
+
+              <text x="728" y="393" text-anchor="end" fill-opacity="0.6">verifyHash() (read-only)</text>
+            </g>
+            <g font-family="IBM Plex Mono, monospace" font-size="11">
+              <line x1="30" y1="418" x2="56" y2="418" stroke="currentColor" stroke-width="1.4"></line>
+              <text x="62" y="422" fill="currentColor" fill-opacity="0.65">write / send</text>
+              <line x1="170" y1="418" x2="196" y2="418" stroke="currentColor" stroke-width="1.4" stroke-dasharray="4 4"></line>
+              <text x="202" y="422" fill="currentColor" fill-opacity="0.65">verify (read-only)</text>
+            </g>
+          </svg>
+        </figure>
+        <figcaption>The client only ever talks to the API. The API is the single component that holds a private key and signs blockchain transactions — beekeepers, admins, and consumers never see a wallet, a seed phrase, or a gas fee.</figcaption>
+      </div>
+      <div class="prose" style="margin-top:22px;">
+        <p>Three independently-replaceable layers: <b>Flutter</b> renders every screen for every role and knows nothing about the chain. <b>Django + GraphQL</b> is the only source of truth for "what happened" and the only thing that can write to the chain, via a service-owned relayer wallet. <b>Solidity</b> stores nothing but batch IDs, event types, and content hashes — an append-only ledger that exists purely to let anyone catch tampering after the fact.</p>
+      </div>
+    </section>
+
+    <section id="stack">
+      <div class="s-head"><span class="s-num">02</span><h2 class="s-title">Technology stack</h2></div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Layer</th><th>Technology</th><th>Role</th></tr></thead>
+          <tbody>
+            <tr><td>Client</td><td class="mono">Flutter Web 3.44 / Dart 3.12</td><td>One codebase, three UIs: authenticated beekeeper &amp; admin apps, plus the unauthenticated public trace page — all behind <span class="mono">go_router</span>, with <span class="mono">provider</span> for auth state and <span class="mono">graphql_flutter</span> for the API.</td></tr>
+            <tr><td>API</td><td class="mono">Strawberry GraphQL 0.327</td><td>Hand-written schema (no auto-CRUD) over Django: typed queries and mutations, a JWT-aware context, and one public unauthenticated query for the trace page.</td></tr>
+            <tr><td>Backend</td><td class="mono">Django 6.1</td><td>Custom user model with a role field, the 7-model schema below, admin console for debugging, and the service layer that talks to the chain.</td></tr>
+            <tr><td>Database</td><td class="mono">PostgreSQL 18</td><td>System of record for every table. Nothing about a batch is reconstructed from the chain — the chain only confirms Postgres hasn't been altered.</td></tr>
+            <tr><td>Smart contract</td><td class="mono">Solidity ^0.8.24</td><td><span class="mono">HoneyChainRegistry.sol</span> — create a batch, append an event with its hash, read a batch's history, verify a hash. Relayer-allowlisted writes, owner-managed.</td></tr>
+            <tr><td>Chain tooling</td><td class="mono">Hardhat 2 + hardhat-toolbox</td><td>Compiles, tests (8 passing), and deploys the contract to a local node acting as the EVM-compatible testnet — swappable for Sepolia etc. via three env vars.</td></tr>
+            <tr><td>Chain client</td><td class="mono">web3.py 8.0</td><td>The backend's own signer: builds, signs, and sends every transaction with one relayer key; parses receipts for the tx hash and on-chain event index.</td></tr>
+            <tr><td>Auth</td><td class="mono">PyJWT</td><td>Hand-rolled JWT issue/verify — chosen over Graphene-oriented JWT libraries that don't support Strawberry.</td></tr>
+            <tr><td>QR</td><td class="mono">qrcode + Pillow</td><td>Generated server-side the instant a batch is packaged, saved as a real image file, served back as an absolute URL.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="data">
+      <div class="s-head"><span class="s-num">03</span><h2 class="s-title">Data model &amp; the trust mechanism</h2></div>
+      <div class="prose">
+        <p>Seven models, kept deliberately flat: <span class="mono">User</span> (role: beekeeper or admin — a consumer is never a row, just an anonymous visitor), <span class="mono">Apiary</span>, <span class="mono">Hive</span>, <span class="mono">HoneyBatch</span>, <span class="mono">QualityCheck</span>, <span class="mono">Package</span>, and the one that matters most:</p>
+      </div>
+      <div class="panel" style="margin:20px 0;">
+        <p style="margin:0 0 10px; font-family:'Zilla Slab',serif; font-weight:600; font-size:1.05rem;"><span class="mono" style="font-weight:600;">BatchEvent</span> — the spine of the whole system</p>
+        <p class="prose" style="margin-bottom:16px; max-width:68ch; color:var(--text-soft);">Every stage transition creates exactly one row: batch, event type, actor, timestamp, a JSON payload, and three chain-facing fields — <span class="mono">data_hash</span>, <span class="mono">tx_hash</span>, <span class="mono">chain_event_index</span>. That last one matters more than it looks: it's what lets the trace page ask the contract "does event #2 of batch HC-2026-0001 still hash to this exact value?" instead of guessing from array position.</p>
+        <pre class="code"><span class="c"># backend/traceability/services/hashing.py — computed ONCE per event</span>
+canonical = json.dumps({"batch_id", "event_type", "event_data"}, sort_keys=True)
+data_hash = "0x" + keccak256(canonical)
+
+<span class="c"># that single hash is then written to BOTH places, in the same call chain:</span>
+BatchEvent.objects.create(..., data_hash=data_hash)   <span class="c"># → Postgres</span>
+contract.recordEvent(batch_id, event_type, data_hash)  <span class="c"># → chain</span></pre>
+      </div>
+      <div class="prose">
+        <p>Because both copies come from one computation, they cannot silently drift apart. If anyone edited a <span class="mono">BatchEvent</span> row directly in Postgres afterward, recomputing its hash would no longer match what's on-chain — and the public trace page checks that live, for every event, on every page load, by calling the contract's <span class="mono">verifyHash()</span>.</p>
+      </div>
+    </section>
+
+    <section id="workflow">
+      <div class="s-head"><span class="s-num">04</span><h2 class="s-title">The workflow</h2></div>
+      <div class="prose" style="margin-bottom:22px;">
+        <p>A <span class="mono">HoneyBatch</span> is a small state machine. Beekeepers own the first two stages (their own fieldwork); admins own the approval and release gates — matching the spec's role split, and keeping the one golden path unambiguous.</p>
+      </div>
+      <div class="panel">
+        <figure class="diagram">
+          <svg viewBox="0 0 1000 240" role="img" aria-label="A batch moves through createHoneyBatch by the beekeeper into HARVESTED, recordProcessingEvent by the beekeeper into PROCESSED, recordQualityCheck by the admin into QUALITY_CHECKED, and packageBatch by the admin into PACKAGED, which generates a QR code linking to the public trace page.">
+            <defs>
+              <marker id="arrow2" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+                <path d="M0,0 L10,5 L0,10 z" fill="currentColor"></path>
+              </marker>
+            </defs>
+            <circle cx="20" cy="107" r="5" fill="currentColor"></circle>
+            <g fill="none" stroke="currentColor" stroke-width="1.4">
+              <rect x="60" y="70" width="180" height="74" rx="2"></rect>
+              <rect x="300" y="70" width="180" height="74" rx="2"></rect>
+              <rect x="540" y="70" width="210" height="74" rx="2"></rect>
+              <rect x="800" y="70" width="180" height="74" rx="2"></rect>
+            </g>
+            <g stroke-width="4">
+              <line x1="60" y1="71" x2="240" y2="71" stroke="var(--honey)"></line>
+              <line x1="300" y1="71" x2="480" y2="71" stroke="var(--honey)"></line>
+              <line x1="540" y1="71" x2="750" y2="71" stroke="var(--hive)"></line>
+              <line x1="800" y1="71" x2="980" y2="71" stroke="var(--hive)"></line>
+            </g>
+            <g stroke="currentColor" stroke-width="1.4" fill="none">
+              <line x1="26" y1="107" x2="58" y2="107" marker-end="url(#arrow2)"></line>
+              <line x1="240" y1="107" x2="298" y2="107" marker-end="url(#arrow2)"></line>
+              <line x1="480" y1="107" x2="538" y2="107" marker-end="url(#arrow2)"></line>
+              <line x1="750" y1="107" x2="798" y2="107" marker-end="url(#arrow2)"></line>
+              <line x1="890" y1="144" x2="890" y2="180" marker-end="url(#arrow2)"></line>
+            </g>
+            <g font-family="IBM Plex Mono, monospace" font-size="13" font-weight="600" fill="currentColor">
+              <text x="150" y="102" text-anchor="middle">HARVESTED</text>
+              <text x="390" y="102" text-anchor="middle">PROCESSED</text>
+              <text x="645" y="102" text-anchor="middle">QUALITY_CHECKED</text>
+              <text x="890" y="102" text-anchor="middle">PACKAGED</text>
+            </g>
+            <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor" fill-opacity="0.55">
+              <text x="150" y="122" text-anchor="middle">+ recordEvent tx</text>
+              <text x="390" y="122" text-anchor="middle">+ recordEvent tx</text>
+              <text x="645" y="122" text-anchor="middle">+ recordEvent tx</text>
+              <text x="890" y="122" text-anchor="middle">+ recordEvent tx</text>
+            </g>
+            <g font-family="IBM Plex Mono, monospace" font-size="10.5" fill="currentColor" fill-opacity="0.7">
+              <text x="149" y="60" text-anchor="middle">createHoneyBatch</text>
+              <text x="389" y="60" text-anchor="middle">recordProcessingEvent</text>
+              <text x="644" y="60" text-anchor="middle">recordQualityCheck(PASSED)</text>
+              <text x="889" y="60" text-anchor="middle">packageBatch</text>
+            </g>
+            <g font-family="IBM Plex Mono, monospace" font-size="11">
+              <text x="890" y="196" text-anchor="middle" fill="currentColor" fill-opacity="0.75">generates QR → /trace/&lt;batchId&gt;</text>
+            </g>
+            <g font-family="IBM Plex Mono, monospace" font-size="11">
+              <rect x="20" y="216" width="12" height="12" fill="var(--honey)"></rect>
+              <text x="38" y="226" fill="currentColor" fill-opacity="0.7">beekeeper action</text>
+              <rect x="170" y="216" width="12" height="12" fill="var(--hive)"></rect>
+              <text x="188" y="226" fill="currentColor" fill-opacity="0.7">admin action</text>
+            </g>
+          </svg>
+        </figure>
+        <figcaption>Every arrow is a GraphQL mutation that, on success, writes one <span class="mono">BatchEvent</span> row and one confirmed on-chain transaction in the same call.</figcaption>
+      </div>
+    </section>
+
+    <section id="roles">
+      <div class="s-head"><span class="s-num">05</span><h2 class="s-title">Who can do what</h2></div>
+      <div class="roles">
+        <div class="role-card beekeeper">
+          <span class="tag">Beekeeper</span>
+          <ul>
+            <li>Register &amp; manage apiaries</li>
+            <li>Register &amp; manage hives</li>
+            <li>Create honey batches from a harvest</li>
+            <li>Record processing</li>
+            <li>View full history of their own batches</li>
+          </ul>
+        </div>
+        <div class="role-card admin">
+          <span class="tag">Admin</span>
+          <ul>
+            <li>View every beekeeper, apiary, hive, batch</li>
+            <li>Record &amp; approve quality checks</li>
+            <li>Package a batch (mints the QR)</li>
+            <li>View blockchain transaction info per event</li>
+          </ul>
+        </div>
+        <div class="role-card consumer">
+          <span class="tag">Consumer</span>
+          <ul>
+            <li>No account, no login, no wallet</li>
+            <li>Scan / open a batch's QR code</li>
+            <li>See the complete, dated event history</li>
+            <li>See a live verified/not-verified badge per stage</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section id="proof">
+      <div class="s-head"><span class="s-num">06</span><h2 class="s-title">Proof it actually runs</h2></div>
+      <div class="stats" style="margin-bottom:22px;">
+        <div class="stat"><span class="num">8 / 8</span><span class="lbl">Hardhat contract tests — access control, lifecycle, hash verification</span></div>
+        <div class="stat"><span class="num">4 / 4</span><span class="lbl">Django model tests, run against live PostgreSQL</span></div>
+        <div class="stat"><span class="num">0</span><span class="lbl"><span class="mono">flutter analyze</span> issues across the whole client</span></div>
+      </div>
+      <div class="prose" style="margin-bottom:16px;">
+        <p>Below is real output from an actual run: a beekeeper harvested batch <span class="mono">HC-2026-0001</span>, an admin approved and packaged it, and the public trace page re-verified every stage against the chain — these are genuine transaction hashes from a live Hardhat node, not placeholders.</p>
+      </div>
+      <div class="ledger">
+        <div class="row"><span class="stage">HARVESTED</span><span class="hash">0xddae5cf74535ca5ff07a8707109418531468faa6579b4f544071478162a931b2</span><span class="verified">verified</span></div>
+        <div class="row"><span class="stage">PROCESSED</span><span class="hash">0x1d442ff69e956ffef5c4ac2b5467b97fb3f8977f4342db329b51445c0ba11e7f</span><span class="verified">verified</span></div>
+        <div class="row"><span class="stage">QUALITY_CHECKED</span><span class="hash">0xc5f274ec8d81b1ddbf22b3270bb980040f800ac8df0e37a28fabeeae648c87ad</span><span class="verified">verified</span></div>
+        <div class="row"><span class="stage">PACKAGED</span><span class="hash">0x3ce05e8c62c21b1ca94f4b305a02fde2d09eea5dafc28d3c2b80e3bdec62579f</span><span class="verified">verified</span></div>
+      </div>
+      <p style="margin-top:10px; font-size:0.86rem; color:var(--text-soft);">Contract <span class="mono">0x5FbDB2315678afecb367f032d93F642f64180aa3</span> on local chain id <span class="mono">31337</span>. The same walkthrough was repeated by hand through the actual Flutter UI, in both the beekeeper and admin roles, with a fresh browser session — not just scripted against the API.</p>
+    </section>
+
+    <section id="decisions">
+      <div class="s-head"><span class="s-num">07</span><h2 class="s-title">Engineering decisions</h2></div>
+      <dl class="qa">
+        <div><dt>Why a local Hardhat node instead of a public testnet?</dt><dd>It's a real EVM implementation, so nothing about the contract or the integration changes for a public chain later — but a hackathon demo shouldn't depend on faucet uptime, a funded wallet, or network latency during judging. Swapping to Sepolia or Polygon Amoy is exactly three env vars: <span class="mono">WEB3_RPC_URL</span>, <span class="mono">RELAYER_PRIVATE_KEY</span>, and redeploying the contract.</dd></div>
+        <div><dt>Why does the backend hold the private key?</dt><dd>The spec is explicit: no user should need a wallet or real cryptocurrency. One relayer address, allowlisted in the contract's constructor, signs every transaction server-side. It's a known, accepted limitation for an MVP (single-writer nonce management, not a production multi-node design) — called out rather than hidden.</dd></div>
+        <div><dt>Why hand-written GraphQL types instead of an auto-CRUD layer?</dt><dd>Strawberry supports Django auto-generation, but this schema is small and the mapping from model to type isn't 1:1 everywhere (the public trace type computes live verification per event). Hand-writing kept every field's intent explicit.</dd></div>
+        <div><dt>What was deliberately left out?</dt><dd>IoT sensors, AI, disease detection, predictive analytics, a marketplace, payments, NFTs, token economics, GPS tracking, and a custom blockchain — all explicitly out of scope for this MVP, in favor of one complete, working, end-to-end flow.</dd></div>
+      </dl>
+    </section>
+
+    <section id="run">
+      <div class="s-head"><span class="s-num">08</span><h2 class="s-title">Run it yourself</h2></div>
+      <pre class="code"><span class="c"># one script brings up the chain, deploys the contract, migrates, and serves the API</span>
+./scripts/dev_up.sh --client
+
+<span class="c"># seed an admin (public registration only ever creates beekeepers, by design)</span>
+cd backend &amp;&amp; ./.venv/bin/python manage.py seed_admin --username hc_admin --password AdminPass123!
+
+<span class="c"># drive the full harvest → process → quality-check → package flow end to end,</span>
+<span class="c"># and print real tx hashes plus the public trace URL</span>
+python3 scripts/seed_demo.py</pre>
+      <div class="tree" style="margin-top:22px;">
+contracts/&nbsp;&nbsp;<b>HoneyChainRegistry.sol</b>, Hardhat tests &amp; deploy script<br>
+backend/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Django project + <b>traceability</b> app (models, GraphQL, chain service)<br>
+client/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Flutter Web app (auth, beekeeper, admin, public trace screens)<br>
+scripts/&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;dev_up.sh, seed_demo.py
+      </div>
+    </section>
+
+    <footer>
+      <span>Honey Chain — beekeeping management &amp; honey traceability MVP</span>
+      <span>Flutter · Django · Strawberry GraphQL · PostgreSQL · Solidity · Hardhat</span>
+    </footer>
+
+  </main>
+</div>
