@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as DjangoUserAdmin
 
-from .models import Apiary, BatchEvent, Hive, HoneyBatch, Package, QualityCheck, User
+from .models import Apiary, BatchEvent, Hive, HoneyBatch, Package, QualityCheck, Review, User
 
 # These registrations are a dev/debugging aid (eyeball what a migration or a
 # GraphQL mutation actually wrote) -- they are NOT the product's Admin-role
@@ -70,5 +70,13 @@ class QualityCheckAdmin(admin.ModelAdmin):
 
 @admin.register(Package)
 class PackageAdmin(admin.ModelAdmin):
-    list_display = ("package_code", "batch", "unit_count", "packaged_by", "packaged_at")
-    search_fields = ("package_code", "batch__batch_id")
+    list_display = ("package_code", "review_code", "batch", "unit_count", "packaged_by", "packaged_at")
+    search_fields = ("package_code", "review_code", "batch__batch_id")
+    readonly_fields = ("review_code",)
+
+
+@admin.register(Review)
+class ReviewAdmin(admin.ModelAdmin):
+    list_display = ("batch", "rating", "reviewer_name", "submitted_at")
+    list_filter = ("rating",)
+    search_fields = ("batch__batch_id", "reviewer_name", "comment")

@@ -61,6 +61,7 @@ fragment HoneyBatchFields on HoneyBatchType {
     unitCount
     qrCodeUrl
     publicUrl
+    reviewCode
     packagedAt
     packagedBy {
       id
@@ -95,6 +96,15 @@ fragment PublicTraceFields on PublicTraceType {
     txHash
     chainStatus
     chainVerified
+  }
+  reviewCount
+  averageRating
+  reviews {
+    id
+    rating
+    comment
+    reviewerName
+    submittedAt
   }
 }
 ''';

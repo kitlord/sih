@@ -95,3 +95,15 @@ mutation PackageBatch(\$batchId: String!, \$packageCode: String!, \$unitCount: I
   }
 }
 ''';
+
+const String submitReviewMutation = r'''
+mutation SubmitReview($batchId: String!, $reviewCode: String!, $rating: Int!, $comment: String, $reviewerName: String) {
+  submitReview(batchId: $batchId, reviewCode: $reviewCode, rating: $rating, comment: $comment, reviewerName: $reviewerName) {
+    id
+    rating
+    comment
+    reviewerName
+    submittedAt
+  }
+}
+''';

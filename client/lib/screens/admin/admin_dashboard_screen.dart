@@ -76,6 +76,11 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       title: 'Admin — All Batches',
       actions: [
         IconButton(
+          icon: const Icon(Icons.star_rate_outlined),
+          tooltip: 'Apiary ratings',
+          onPressed: () => context.go('/admin/ratings'),
+        ),
+        IconButton(
           icon: const Icon(Icons.refresh),
           tooltip: 'Refresh',
           onPressed: _refresh,

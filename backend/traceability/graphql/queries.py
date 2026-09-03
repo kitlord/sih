@@ -1,11 +1,13 @@
 from typing import Optional
 
 import strawberry
+from django.db.models import Avg, Count, F
 from graphql import GraphQLError
 
 from .. import models
 from .permissions import current_user, require_authenticated, require_role
 from .types import (
+    ApiaryRatingType,
     ApiaryType,
     HiveType,
     HoneyBatchType,
@@ -62,6 +64,23 @@ class Query:
         if status:
             qs = qs.filter(status=status)
         return [honey_batch_type(b) for b in qs]
+
+    @strawberry.field
+    def admin_apiary_ratings(self, info: strawberry.Info) -> list[ApiaryRatingType]:
+        """Average consumer rating per apiary (across all its batches'
+        reviews), worst-rated first -- gives an admin a single view of
+        which locations/beekeepers are getting poor feedback, without
+        opening every batch individually. Apiaries with no reviews yet
+        sort last (averageRating is null), not first."""
+        require_role(info, models.User.Role.ADMIN)
+        apiaries = models.Apiary.objects.annotate(
+            avg_rating=Avg("batches__reviews__rating"),
+            rating_count=Count("batches__reviews"),
+        ).order_by(F("avg_rating").asc(nulls_last=True))
+        return [
+            ApiaryRatingType(apiary=apiary_type(a), average_rating=a.avg_rating, review_count=a.rating_count)
+            for a in apiaries
+        ]
 
     @strawberry.field
     def public_trace_by_batch_id(self, info: strawberry.Info, batch_id: str) -> Optional[PublicTraceType]:

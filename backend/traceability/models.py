@@ -1,3 +1,4 @@
+import secrets
 import uuid
 
 from django.contrib.auth.models import AbstractUser
@@ -175,6 +176,15 @@ class Package(models.Model):
     unit_count = models.PositiveIntegerField(default=1)
     qr_code_image = models.ImageField(upload_to="qr_codes/")
     public_url = models.URLField()
+    # A second secret, distinct from package_code/public_url -- those are
+    # printed on the public trace QR and shown to anyone who scans it, so
+    # they can't gate anything. review_code is printed separately on the
+    # physical packaging (e.g. under the lid) and never returned by the
+    # public trace query -- knowing it is the proxy for holding a real unit
+    # of this package, in place of a purchase/order system this app has no
+    # consumer accounts to build. Shared by the whole packaging run (not
+    # one-per-unit) -- see submit_review for what that trades off.
+    review_code = models.CharField(max_length=12, unique=True, editable=False)
     packaged_by = models.ForeignKey(User, on_delete=models.PROTECT, related_name="packages")
     packaged_at = models.DateTimeField(auto_now_add=True)
     linked_event = models.OneToOneField(
@@ -183,6 +193,16 @@ class Package(models.Model):
 
     def __str__(self):
         return f"Package {self.package_code} for {self.batch.batch_id}"
+
+    @staticmethod
+    def generate_review_code():
+        """Random code for the review-gating use above. Excludes visually
+        ambiguous characters (0/O, 1/I) since it's meant to be hand-copied
+        off physical packaging. Not collision-checked against the unique
+        constraint here -- acceptable at this MVP's scale, same trade-off
+        as HoneyBatch.generate_batch_id."""
+        alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+        return "".join(secrets.choice(alphabet) for _ in range(8))
 
 
 class DigilockerVerificationRequest(models.Model):
@@ -214,3 +234,25 @@ class DigilockerVerificationRequest(models.Model):
 
     def __str__(self):
         return f"{self.apiary.name}: {self.status}"
+
+
+class Review(models.Model):
+    """Consumer feedback on a packaged batch, gated on the batch's
+    Package.review_code (see there) rather than any account -- consumers
+    are always anonymous (see User's docstring). Deliberately NOT a
+    BatchEvent / not anchored on-chain: this is subjective consumer
+    opinion, not supply-chain provenance, so it has no business being
+    hashed the way BatchEvent is (same reasoning as
+    DigilockerVerificationRequest above)."""
+
+    batch = models.ForeignKey(HoneyBatch, on_delete=models.CASCADE, related_name="reviews")
+    rating = models.PositiveSmallIntegerField()  # 1-5, validated in the mutation
+    comment = models.TextField(blank=True)
+    reviewer_name = models.CharField(max_length=100, blank=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-submitted_at"]
+
+    def __str__(self):
+        return f"{self.batch.batch_id}: {self.rating}/5"

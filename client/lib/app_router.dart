@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
+import 'screens/admin/admin_apiary_ratings_screen.dart';
 import 'screens/admin/admin_batch_detail_screen.dart';
 import 'screens/admin/admin_dashboard_screen.dart';
 import 'screens/admin/package_batch_screen.dart';
@@ -31,6 +32,7 @@ import 'state/auth_provider.dart';
 ///   /beekeeper/batches/:batchId
 ///   /beekeeper/batches/:batchId/process
 ///   /admin                                          dashboard (all batches)
+///   /admin/ratings                                   apiary ratings, worst first
 ///   /admin/batches/:batchId
 ///   /admin/batches/:batchId/quality-check
 ///   /admin/batches/:batchId/package
@@ -86,6 +88,7 @@ GoRouter buildRouter(AuthProvider auth) {
       ),
 
       GoRoute(path: '/admin', builder: (context, state) => const AdminDashboardScreen()),
+      GoRoute(path: '/admin/ratings', builder: (context, state) => const AdminApiaryRatingsScreen()),
       GoRoute(
         path: '/admin/batches/:batchId',
         builder: (context, state) => AdminBatchDetailScreen(batchId: state.pathParameters['batchId']!),

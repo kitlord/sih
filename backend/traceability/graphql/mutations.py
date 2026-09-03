@@ -20,8 +20,10 @@ from .types import (
     DigilockerVerificationStart,
     HiveType,
     HoneyBatchType,
+    ReviewType,
     apiary_type,
     honey_batch_type,
+    review_type,
     to_hive_type,
     user_type,
 )
@@ -300,6 +302,7 @@ class Mutation:
             package_code=package_code,
             unit_count=unit_count,
             public_url=public_url,
+            review_code=models.Package.generate_review_code(),
             packaged_by=admin,
             linked_event=event,
         )
@@ -310,3 +313,40 @@ class Mutation:
         batch.save(update_fields=["status", "updated_at"])
         batch.refresh_from_db()
         return honey_batch_type(batch)
+
+    # --- Public: consumer reviews ---
+
+    @strawberry.mutation
+    def submit_review(
+        self,
+        info: strawberry.Info,
+        batch_id: str,
+        review_code: str,
+        rating: int,
+        comment: str = "",
+        reviewer_name: str = "",
+    ) -> ReviewType:
+        """Public, unauthenticated -- consumers have no account (see User's
+        docstring). Gated on review_code instead of a login: it's printed
+        on the physical packaging and never returned by
+        publicTraceByBatchId, so submitting a matching one proves the
+        reviewer holds a real unit of this package. Open review (no
+        moderation queue, no purchase/order system) -- see Package.review_code
+        for what that trades off."""
+        if not 1 <= rating <= 5:
+            raise GraphQLError("rating must be between 1 and 5")
+        try:
+            batch = models.HoneyBatch.objects.get(batch_id=batch_id, status=models.HoneyBatch.Status.PACKAGED)
+        except models.HoneyBatch.DoesNotExist:
+            raise GraphQLError("Batch not found")
+        package = getattr(batch, "package", None)
+        if package is None or review_code.strip().upper() != package.review_code:
+            raise GraphQLError("Invalid review code")
+
+        review = models.Review.objects.create(
+            batch=batch,
+            rating=rating,
+            comment=comment.strip(),
+            reviewer_name=reviewer_name.strip(),
+        )
+        return review_type(review)

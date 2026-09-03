@@ -66,6 +66,7 @@ class _QrScreenState extends State<QrScreen> {
           }
           final qrCodeUrl = package['qrCodeUrl'] as String?;
           final publicUrl = package['publicUrl'] as String? ?? '';
+          final reviewCode = package['reviewCode'] as String? ?? '';
 
           return Center(
             child: ConstrainedBox(
@@ -105,6 +106,44 @@ class _QrScreenState extends State<QrScreen> {
                               }
                             },
                     ),
+                    if (reviewCode.isNotEmpty) ...[
+                      const SizedBox(height: 28),
+                      const Divider(),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Print this review code separately (e.g. under the lid) -- '
+                        'a consumer needs it to leave a rating, so it must NOT be '
+                        'visible on the QR/trace page itself.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade50,
+                          border: Border.all(color: Colors.amber.shade200),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: SelectableText(
+                          reviewCode,
+                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 20, letterSpacing: 2),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        icon: const Icon(Icons.copy),
+                        label: const Text('Copy review code'),
+                        onPressed: () async {
+                          await Clipboard.setData(ClipboardData(text: reviewCode));
+                          if (context.mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Review code copied to clipboard')),
+                            );
+                          }
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),

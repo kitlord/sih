@@ -54,3 +54,13 @@ query PublicTrace(\$batchId: String!) {
   publicTraceByBatchId(batchId: \$batchId) { ...PublicTraceFields }
 }
 ''';
+
+const String adminApiaryRatingsQuery = r'''
+query AdminApiaryRatings {
+  adminApiaryRatings {
+    apiary { id name locationDescription }
+    averageRating
+    reviewCount
+  }
+}
+''';

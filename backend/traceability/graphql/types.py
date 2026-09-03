@@ -140,6 +140,10 @@ class PackageType:
     unit_count: int
     qr_code_url: str
     public_url: str
+    # Authenticated surface only (HoneyBatchType.package, via `batch` /
+    # `adminAllBatches` / `myBatches`) -- never exposed on PublicTraceType,
+    # since anyone can load the public trace page. See Package.review_code.
+    review_code: str
     packaged_by: UserType
     packaged_at: datetime.datetime
 
@@ -153,9 +157,40 @@ def package_type(p: models.Package) -> PackageType:
         unit_count=p.unit_count,
         qr_code_url=f"{settings.BACKEND_BASE_URL}{p.qr_code_image.url}",
         public_url=p.public_url,
+        review_code=p.review_code,
         packaged_by=user_type(p.packaged_by),
         packaged_at=p.packaged_at,
     )
+
+
+@strawberry.type
+class ReviewType:
+    id: strawberry.ID
+    rating: int
+    comment: str
+    reviewer_name: str
+    submitted_at: datetime.datetime
+
+
+def review_type(r: models.Review) -> ReviewType:
+    return ReviewType(
+        id=strawberry.ID(str(r.id)),
+        rating=r.rating,
+        comment=r.comment,
+        reviewer_name=r.reviewer_name,
+        submitted_at=r.submitted_at,
+    )
+
+
+@strawberry.type
+class ApiaryRatingType:
+    """One row of the admin-only ratings-by-location summary -- lets an
+    admin see which apiaries are getting poor consumer feedback without
+    opening every batch individually."""
+
+    apiary: ApiaryType
+    average_rating: Optional[float]
+    review_count: int
 
 
 @strawberry.type
@@ -235,6 +270,9 @@ class PublicTraceType:
     all_events_chain_verified: bool
     fssai_license_number: str
     fssai_verified: bool
+    reviews: list[ReviewType]
+    average_rating: Optional[float]
+    review_count: int
 
 
 def public_trace_type(b: models.HoneyBatch) -> PublicTraceType:
@@ -264,6 +302,10 @@ def public_trace_type(b: models.HoneyBatch) -> PublicTraceType:
     latest_check = b.quality_checks.order_by("-checked_at").first()
     package = getattr(b, "package", None)
 
+    reviews = list(b.reviews.all())
+    review_count = len(reviews)
+    average_rating = (sum(r.rating for r in reviews) / review_count) if review_count else None
+
     return PublicTraceType(
         batch_id=b.batch_id,
         apiary_name=b.apiary.name,
@@ -282,4 +324,7 @@ def public_trace_type(b: models.HoneyBatch) -> PublicTraceType:
         all_events_chain_verified=all_verified and len(public_events) > 0,
         fssai_license_number=b.apiary.fssai_license_number,
         fssai_verified=b.apiary.fssai_verified_at is not None,
+        reviews=[review_type(r) for r in reviews],
+        average_rating=average_rating,
+        review_count=review_count,
     )
