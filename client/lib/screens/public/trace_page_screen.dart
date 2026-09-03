@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../graphql/client.dart';
 import '../../graphql/queries.dart';
 import '../../widgets/batch_status_badge.dart';
+import '../../widgets/digilocker_verified_badge.dart';
 import '../../widgets/event_timeline.dart';
 
 /// The public consumer provenance page -- reachable at `/trace/{batchId}`
@@ -120,6 +121,8 @@ class _TraceView extends StatelessWidget {
     final qualityResult = trace['qualityResult'] as String?;
     final packageCode = trace['packageCode'] as String?;
     final packagedAt = DateTime.tryParse(trace['packagedAt'] as String? ?? '');
+    final fssaiLicenseNumber = trace['fssaiLicenseNumber'] as String? ?? '';
+    final fssaiVerified = trace['fssaiVerified'] as bool? ?? false;
 
     return ListView(
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 48),
@@ -164,6 +167,10 @@ class _TraceView extends StatelessWidget {
                 _InfoRow(icon: Icons.scale_outlined, label: 'Quantity', value: '${trace['quantityKg']} kg'),
                 _InfoRow(icon: Icons.local_florist_outlined, label: 'Floral source', value: trace['floralSource'] as String? ?? '—'),
                 _InfoRow(icon: Icons.person_outline, label: 'Beekeeper', value: trace['beekeeperUsername'] as String? ?? '—'),
+                if (fssaiLicenseNumber.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  DigilockerVerifiedBadge(verified: fssaiVerified, licenseNumber: fssaiLicenseNumber, dense: true),
+                ],
                 if (qualityResult != null)
                   _InfoRow(
                     icon: qualityResult == 'PASSED' ? Icons.check_circle_outline : Icons.cancel_outlined,

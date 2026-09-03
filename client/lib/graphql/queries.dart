@@ -13,6 +13,9 @@ query MyApiaries {
     name
     locationDescription
     createdAt
+    fssaiLicenseNumber
+    fssaiVerified
+    fssaiVerifiedAt
     hives { id label hiveType isActive createdAt }
   }
 }

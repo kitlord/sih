@@ -131,6 +131,15 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 # MVP rather than a real security boundary decision.
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 
+# The client sends this on every request (see client/lib/graphql/client.dart)
+# to suppress ngrok's browser interstitial, even against a non-ngrok backend.
+# Without it in the allow-list, browsers reject it during CORS preflight and
+# block every GraphQL call client-side -- which surfaces in the app as a
+# generic "Could not reach the server" error even though the backend is up.
+from corsheaders.defaults import default_headers  # noqa: E402
+
+CORS_ALLOW_HEADERS = list(default_headers) + ["ngrok-skip-browser-warning"]
+
 # --- Honey Chain application settings ---
 
 # Auth
@@ -148,3 +157,12 @@ CONTRACT_ARTIFACT_PATH = str((BASE_DIR / env("CONTRACT_ARTIFACT_PATH", "../contr
 # Used to build absolute, externally-openable URLs.
 PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", "http://localhost:8080").rstrip("/")
 BACKEND_BASE_URL = env("BACKEND_BASE_URL", "http://localhost:8000").rstrip("/")
+
+# DigiLocker "Requester"-side verification of an apiary's FSSAI license
+# (see services/digilocker.py). No aggregator (Setu, Sandbox.co.in, etc.)
+# account exists for this MVP, so this is mocked by default -- swapping in
+# a real one is DIGILOCKER_USE_MOCK=False + DIGILOCKER_CLIENT_ID/
+# DIGILOCKER_CLIENT_SECRET, no code changes, same as the blockchain layer.
+DIGILOCKER_USE_MOCK = env_bool("DIGILOCKER_USE_MOCK", True)
+DIGILOCKER_CLIENT_ID = env("DIGILOCKER_CLIENT_ID")
+DIGILOCKER_CLIENT_SECRET = env("DIGILOCKER_CLIENT_SECRET")

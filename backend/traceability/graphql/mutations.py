@@ -9,6 +9,7 @@ from graphql import GraphQLError
 
 from .. import models
 from ..services.blockchain import BlockchainError, get_blockchain_service
+from ..services.digilocker import DigiLockerError, get_digilocker_service
 from ..services.hashing import compute_event_hash
 from ..services.qrcode_service import make_qr_content_file
 from .auth import create_token
@@ -16,6 +17,7 @@ from .permissions import require_owns_apiary, require_owns_batch, require_role
 from .types import (
     ApiaryType,
     AuthPayload,
+    DigilockerVerificationStart,
     HiveType,
     HoneyBatchType,
     apiary_type,
@@ -100,6 +102,63 @@ class Mutation:
         require_owns_apiary(user, apiary)
         hive = models.Hive.objects.create(apiary=apiary, label=label, hive_type=hive_type)
         return to_hive_type(hive)
+
+    # --- Beekeeper: FSSAI / DigiLocker regulatory verification ---
+
+    @strawberry.mutation
+    def set_fssai_license_number(
+        self, info: strawberry.Info, apiary_id: strawberry.ID, license_number: str
+    ) -> ApiaryType:
+        """Sets/edits the apiary's self-reported FSSAI license number.
+        Always clears fssai_verified_at -- a verification only ever attests
+        to the specific number it checked, so changing the number must
+        invalidate any prior verified badge rather than silently keep it."""
+        user = require_role(info, models.User.Role.BEEKEEPER)
+        try:
+            apiary = models.Apiary.objects.get(pk=apiary_id)
+        except models.Apiary.DoesNotExist:
+            raise GraphQLError("Apiary not found")
+        require_owns_apiary(user, apiary)
+
+        license_number = license_number.strip()
+        if not license_number:
+            raise GraphQLError("licenseNumber is required")
+
+        apiary.fssai_license_number = license_number
+        apiary.fssai_verified_at = None
+        apiary.save(update_fields=["fssai_license_number", "fssai_verified_at"])
+        return apiary_type(apiary)
+
+    @strawberry.mutation
+    def start_digilocker_verification(
+        self, info: strawberry.Info, apiary_id: strawberry.ID
+    ) -> DigilockerVerificationStart:
+        """Kicks off the consent-redirect flow (see services/digilocker.py):
+        the client opens the returned authorization_url in a new tab, the
+        beekeeper grants (or denies) consent there, and
+        digilocker_views.callback_view resolves the request and updates the
+        apiary once they're done -- there's nothing more to return here,
+        since the whole point of this flow is that the result arrives
+        out-of-band, not from this mutation's response."""
+        user = require_role(info, models.User.Role.BEEKEEPER)
+        try:
+            apiary = models.Apiary.objects.get(pk=apiary_id)
+        except models.Apiary.DoesNotExist:
+            raise GraphQLError("Apiary not found")
+        require_owns_apiary(user, apiary)
+
+        if not apiary.fssai_license_number:
+            raise GraphQLError("Set an FSSAI license number before requesting verification")
+
+        verification = models.DigilockerVerificationRequest.objects.create(
+            apiary=apiary, requested_by=user, license_number=apiary.fssai_license_number
+        )
+        try:
+            authorization_url = get_digilocker_service().build_authorization_url(str(verification.id))
+        except DigiLockerError as exc:
+            raise GraphQLError(f"Could not start DigiLocker verification: {exc}")
+
+        return DigilockerVerificationStart(request_id=str(verification.id), authorization_url=authorization_url)
 
     # --- Beekeeper: batch creation + processing ---
 

@@ -66,7 +66,10 @@ GoRouter buildRouter(AuthProvider auth) {
       GoRoute(path: '/beekeeper/apiaries/new', builder: (context, state) => const ApiaryFormScreen()),
       GoRoute(
         path: '/beekeeper/apiaries/:apiaryId',
-        builder: (context, state) => ApiaryDetailScreen(apiaryId: state.pathParameters['apiaryId']!),
+        builder: (context, state) => ApiaryDetailScreen(
+          apiaryId: state.pathParameters['apiaryId']!,
+          digilockerResult: state.uri.queryParameters['digilocker'],
+        ),
       ),
       GoRoute(
         path: '/beekeeper/apiaries/:apiaryId/hives/new',

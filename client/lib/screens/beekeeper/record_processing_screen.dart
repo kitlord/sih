@@ -7,6 +7,19 @@ import '../../graphql/client.dart';
 import '../../graphql/mutations.dart';
 import '../../widgets/app_scaffold.dart';
 
+/// Common honey processing methods, shown in the dropdown. "Other" reveals
+/// a free-text field below it -- the underlying `method` GraphQL arg stays
+/// plain text either way.
+const List<String> _processingMethodOptions = [
+  'Cold Extraction',
+  'Heat Extraction',
+  'Centrifugal Extraction',
+  'Crush and Strain',
+  'Raw / Unprocessed',
+  'Filtration',
+  'Other',
+];
+
 class RecordProcessingScreen extends StatefulWidget {
   final String batchId;
 
@@ -18,14 +31,15 @@ class RecordProcessingScreen extends StatefulWidget {
 
 class _RecordProcessingScreenState extends State<RecordProcessingScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _method = TextEditingController();
+  final _customMethod = TextEditingController();
   final _notes = TextEditingController();
+  String? _method;
   bool _submitting = false;
   String? _error;
 
   @override
   void dispose() {
-    _method.dispose();
+    _customMethod.dispose();
     _notes.dispose();
     super.dispose();
   }
@@ -37,11 +51,12 @@ class _RecordProcessingScreenState extends State<RecordProcessingScreen> {
       _error = null;
     });
     final client = context.read<GraphQLClient>();
+    final method = _method == 'Other' ? _customMethod.text.trim() : (_method ?? '');
     final result = await client.mutate(MutationOptions(
       document: gql(recordProcessingEventMutation),
       variables: {
         'batchId': widget.batchId,
-        'method': _method.text.trim(),
+        'method': method,
         'notes': _notes.text.trim().isEmpty ? null : _notes.text.trim(),
       },
     ));
@@ -81,12 +96,24 @@ class _RecordProcessingScreenState extends State<RecordProcessingScreen> {
                       padding: const EdgeInsets.only(bottom: 12),
                       child: Text(_error!, style: const TextStyle(color: Colors.red)),
                     ),
-                  TextFormField(
-                    controller: _method,
-                    decoration:
-                        const InputDecoration(labelText: 'Method (e.g. Cold extraction)', border: OutlineInputBorder()),
-                    validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                  DropdownButtonFormField<String>(
+                    initialValue: _method,
+                    decoration: const InputDecoration(labelText: 'Method', border: OutlineInputBorder()),
+                    hint: const Text('Select processing method'),
+                    items: _processingMethodOptions
+                        .map((m) => DropdownMenuItem(value: m, child: Text(m)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _method = v),
+                    validator: (v) => v == null ? 'Required' : null,
                   ),
+                  if (_method == 'Other') ...[
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _customMethod,
+                      decoration: const InputDecoration(labelText: 'Specify method', border: OutlineInputBorder()),
+                      validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
+                    ),
+                  ],
                   const SizedBox(height: 12),
                   TextFormField(
                     controller: _notes,

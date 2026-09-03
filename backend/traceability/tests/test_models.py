@@ -3,7 +3,8 @@ from decimal import Decimal
 
 from django.test import TestCase
 
-from traceability.models import Apiary, BatchEvent, Hive, HoneyBatch, User
+from traceability.models import Apiary, BatchEvent, DigilockerVerificationRequest, Hive, HoneyBatch, User
+from traceability.services.digilocker import MockDigiLockerService
 
 
 class ModelSmokeTests(TestCase):
@@ -65,3 +66,40 @@ class ModelSmokeTests(TestCase):
         )
         event_types = list(batch.events.values_list("event_type", flat=True))
         self.assertEqual(event_types, [BatchEvent.EventType.HARVESTED, BatchEvent.EventType.PROCESSED])
+
+    def test_apiary_starts_fssai_unverified(self):
+        apiary = Apiary.objects.create(owner=self.beekeeper, name="Sunny Meadow")
+        self.assertEqual(apiary.fssai_license_number, "")
+        self.assertIsNone(apiary.fssai_verified_at)
+
+    def test_digilocker_verification_request_defaults_to_pending(self):
+        apiary = Apiary.objects.create(owner=self.beekeeper, name="Sunny Meadow", fssai_license_number="12345678901234")
+        req = DigilockerVerificationRequest.objects.create(
+            apiary=apiary, requested_by=self.beekeeper, license_number=apiary.fssai_license_number
+        )
+        self.assertEqual(req.status, DigilockerVerificationRequest.Status.PENDING)
+        self.assertIsNone(req.resolved_at)
+
+
+class MockDigiLockerServiceTests(TestCase):
+    """The mock provider is what stands in for a real aggregator (Setu,
+    Sandbox.co.in, etc.) in this MVP -- worth pinning its format check
+    directly, since it's the one piece of "verification" logic that
+    actually exists today."""
+
+    def setUp(self):
+        self.service = MockDigiLockerService()
+
+    def test_accepts_valid_14_digit_fssai_number(self):
+        self.assertTrue(self.service.verify_license("12345678901234"))
+
+    def test_rejects_wrong_length(self):
+        self.assertFalse(self.service.verify_license("123"))
+
+    def test_rejects_non_numeric(self):
+        self.assertFalse(self.service.verify_license("1234567890ABCD"))
+
+    def test_authorization_url_points_at_mock_consent_endpoint(self):
+        url = self.service.build_authorization_url("some-request-id")
+        self.assertIn("/digilocker/mock-consent", url)
+        self.assertIn("request_id=some-request-id", url)

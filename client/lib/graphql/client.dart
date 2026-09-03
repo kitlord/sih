@@ -6,7 +6,16 @@ import '../config.dart';
 /// by AuthProvider) rather than a fixed value, so the same client keeps
 /// working across login/logout without being rebuilt.
 GraphQLClient buildGraphQLClient(String? Function() getToken) {
-  final httpLink = HttpLink(graphqlEndpoint);
+  final httpLink = HttpLink(
+    graphqlEndpoint,
+    // A free ngrok tunnel (scripts/dev_up.sh --public) shows a one-time
+    // "Visit Site" interstitial HTML page to any request that looks
+    // browser-like -- which every request from here is, since this runs in
+    // the browser's own fetch/XHR. Without this header, that interstitial
+    // silently replaces every GraphQL response with HTML instead of JSON.
+    // Harmless (just an extra ignored header) against a non-ngrok backend.
+    defaultHeaders: const {'ngrok-skip-browser-warning': 'true'},
+  );
 
   final authLink = AuthLink(
     getToken: () async {

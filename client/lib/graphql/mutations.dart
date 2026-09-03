@@ -29,6 +29,26 @@ mutation CreateApiary($name: String!, $locationDescription: String) {
 }
 ''';
 
+const String setFssaiLicenseNumberMutation = r'''
+mutation SetFssaiLicenseNumber($apiaryId: ID!, $licenseNumber: String!) {
+  setFssaiLicenseNumber(apiaryId: $apiaryId, licenseNumber: $licenseNumber) {
+    id
+    fssaiLicenseNumber
+    fssaiVerified
+    fssaiVerifiedAt
+  }
+}
+''';
+
+const String startDigilockerVerificationMutation = r'''
+mutation StartDigilockerVerification($apiaryId: ID!) {
+  startDigilockerVerification(apiaryId: $apiaryId) {
+    requestId
+    authorizationUrl
+  }
+}
+''';
+
 const String createHiveMutation = r'''
 mutation CreateHive($apiaryId: ID!, $label: String!, $hiveType: String) {
   createHive(apiaryId: $apiaryId, label: $label, hiveType: $hiveType) {

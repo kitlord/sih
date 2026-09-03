@@ -54,6 +54,9 @@ class ApiaryType:
     location_description: str
     created_at: datetime.datetime
     hives: list[HiveType]
+    fssai_license_number: str
+    fssai_verified: bool
+    fssai_verified_at: Optional[datetime.datetime]
 
 
 def apiary_type(a: models.Apiary) -> ApiaryType:
@@ -63,7 +66,21 @@ def apiary_type(a: models.Apiary) -> ApiaryType:
         location_description=a.location_description,
         created_at=a.created_at,
         hives=[to_hive_type(h) for h in a.hives.all()],
+        fssai_license_number=a.fssai_license_number,
+        fssai_verified=a.fssai_verified_at is not None,
+        fssai_verified_at=a.fssai_verified_at,
     )
+
+
+@strawberry.type
+class DigilockerVerificationStart:
+    """Returned by startDigilockerVerification -- the Flutter client opens
+    authorization_url in a new tab/window and lets the user complete
+    consent there; there is no synchronous "is it done yet" response
+    because the whole point of this flow is an out-of-band redirect."""
+
+    request_id: str
+    authorization_url: str
 
 
 @strawberry.type
@@ -216,6 +233,8 @@ class PublicTraceType:
     package_code: Optional[str]
     packaged_at: Optional[datetime.datetime]
     all_events_chain_verified: bool
+    fssai_license_number: str
+    fssai_verified: bool
 
 
 def public_trace_type(b: models.HoneyBatch) -> PublicTraceType:
@@ -261,4 +280,6 @@ def public_trace_type(b: models.HoneyBatch) -> PublicTraceType:
         package_code=package.package_code if package else None,
         packaged_at=package.packaged_at if package else None,
         all_events_chain_verified=all_verified and len(public_events) > 0,
+        fssai_license_number=b.apiary.fssai_license_number,
+        fssai_verified=b.apiary.fssai_verified_at is not None,
     )

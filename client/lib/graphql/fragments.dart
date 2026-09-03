@@ -14,6 +14,8 @@ fragment HoneyBatchFields on HoneyBatchType {
     id
     name
     locationDescription
+    fssaiLicenseNumber
+    fssaiVerified
   }
   hives {
     id
@@ -84,6 +86,8 @@ fragment PublicTraceFields on PublicTraceType {
   packageCode
   packagedAt
   allEventsChainVerified
+  fssaiLicenseNumber
+  fssaiVerified
   events {
     eventType
     timestamp

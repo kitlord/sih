@@ -7,6 +7,18 @@ import '../../graphql/client.dart';
 import '../../graphql/mutations.dart';
 import '../../widgets/app_scaffold.dart';
 
+/// Common hive equipment styles, shown in the dropdown. "Other" reveals a
+/// free-text field below it so an uncommon hive type can still be recorded
+/// -- the underlying `hive_type` field on the backend stays plain text.
+const List<String> _hiveTypeOptions = [
+  'Langstroth',
+  'Top Bar',
+  'Warre',
+  'Flow Hive',
+  'Traditional / Log Hive',
+  'Other',
+];
+
 class HiveFormScreen extends StatefulWidget {
   final String apiaryId;
 
@@ -19,13 +31,14 @@ class HiveFormScreen extends StatefulWidget {
 class _HiveFormScreenState extends State<HiveFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final _label = TextEditingController();
-  final _hiveType = TextEditingController();
+  final _customHiveType = TextEditingController();
+  String? _hiveType;
   bool _submitting = false;
 
   @override
   void dispose() {
     _label.dispose();
-    _hiveType.dispose();
+    _customHiveType.dispose();
     super.dispose();
   }
 
@@ -33,12 +46,13 @@ class _HiveFormScreenState extends State<HiveFormScreen> {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _submitting = true);
     final client = context.read<GraphQLClient>();
+    final hiveType = _hiveType == 'Other' ? _customHiveType.text.trim() : (_hiveType ?? '');
     final result = await client.mutate(MutationOptions(
       document: gql(createHiveMutation),
       variables: {
         'apiaryId': widget.apiaryId,
         'label': _label.text.trim(),
-        'hiveType': _hiveType.text.trim().isEmpty ? null : _hiveType.text.trim(),
+        'hiveType': hiveType.isEmpty ? null : hiveType,
       },
     ));
     if (!mounted) return;
@@ -76,13 +90,28 @@ class _HiveFormScreenState extends State<HiveFormScreen> {
                     validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null,
                   ),
                   const SizedBox(height: 12),
-                  TextFormField(
-                    controller: _hiveType,
+                  DropdownButtonFormField<String>(
+                    initialValue: _hiveType,
                     decoration: const InputDecoration(
-                      labelText: 'Hive type (optional, e.g. Langstroth)',
+                      labelText: 'Hive type (optional)',
                       border: OutlineInputBorder(),
                     ),
+                    hint: const Text('Select hive type'),
+                    items: _hiveTypeOptions
+                        .map((t) => DropdownMenuItem(value: t, child: Text(t)))
+                        .toList(),
+                    onChanged: (v) => setState(() => _hiveType = v),
                   ),
+                  if (_hiveType == 'Other') ...[
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _customHiveType,
+                      decoration: const InputDecoration(
+                        labelText: 'Specify hive type',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 20),
                   FilledButton(
                     onPressed: _submitting ? null : _submit,

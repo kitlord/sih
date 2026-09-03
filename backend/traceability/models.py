@@ -1,3 +1,5 @@
+import uuid
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
@@ -23,6 +25,16 @@ class Apiary(models.Model):
     # Free-text description only -- no GPS/geolocation tracking in this MVP.
     location_description = models.CharField(max_length=255, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    # Regulatory linkage (self-reported until independently confirmed).
+    # FSSAI license numbers are 14 digits -- see services/digilocker.py for
+    # the format check applied at verification time.
+    fssai_license_number = models.CharField(max_length=32, blank=True)
+    # Set only once a DigilockerVerificationRequest for the *current* value
+    # of fssai_license_number resolves as APPROVED. Cleared whenever the
+    # license number changes, so a verified badge can never point at a
+    # number that was never actually checked.
+    fssai_verified_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
         ordering = ["-created_at"]
@@ -171,3 +183,34 @@ class Package(models.Model):
 
     def __str__(self):
         return f"Package {self.package_code} for {self.batch.batch_id}"
+
+
+class DigilockerVerificationRequest(models.Model):
+    """One DigiLocker "Requester"-side consent flow: a beekeeper asks to
+    have an apiary's self-reported FSSAI license number independently
+    confirmed. Deliberately NOT part of the BatchEvent/blockchain chain --
+    this is off-chain regulatory metadata about the apiary (who they claim
+    to be), not batch provenance data (what happened to a batch), so it has
+    no business being hashed/anchored the way BatchEvent is."""
+
+    class Status(models.TextChoices):
+        PENDING = "PENDING", "Pending"
+        APPROVED = "APPROVED", "Approved"
+        DENIED = "DENIED", "Denied"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    apiary = models.ForeignKey(Apiary, on_delete=models.CASCADE, related_name="digilocker_requests")
+    requested_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name="digilocker_requests")
+    # Snapshot of the license number at request time -- so a later edit to
+    # Apiary.fssai_license_number can't be retroactively "verified" by an
+    # old, already-approved request.
+    license_number = models.CharField(max_length=32)
+    status = models.CharField(max_length=10, choices=Status.choices, default=Status.PENDING)
+    created_at = models.DateTimeField(auto_now_add=True)
+    resolved_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.apiary.name}: {self.status}"
