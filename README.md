@@ -113,11 +113,43 @@ hand.
    stage, each independently re-verified against the chain at page-load
    time.
 
+## FSSAI license verification (via API Setu)
+
+Separate from the batch-provenance chain above: an apiary can have a
+self-reported FSSAI license number independently confirmed against the
+real government registry, live — not just format-checked.
+
+- **Mocked by default** (`DIGILOCKER_USE_MOCK=True` in `backend/.env`) —
+  accepts any correctly-shaped 14-digit number; no real registry behind it.
+- Set **`DIGILOCKER_USE_MOCK=False`** to call the real thing: **API Setu**
+  (`apisetu.gov.in`), the official government API exchange (NIC/MeitY),
+  whose FSSAI collection exposes the same DigiLocker-backed verification
+  as a direct synchronous call — no OAuth redirect. `APISETU_API_KEY` /
+  `APISETU_CLIENT_ID` already default to API Setu's own public sandbox
+  demo credentials, so this works against the live sandbox with zero
+  signup or extra config. See `backend/.env.example` and
+  `backend/traceability/services/digilocker.py`'s module docstring for
+  why getting a *personal* API Setu key is a separate, much heavier thing
+  (a Partner account verified by GSTIN/PAN/MSME/a `.gov.in` site — built
+  for registered businesses/government bodies, not needed for this MVP).
+
+To try it: on an apiary's detail page in the Flutter client, add an
+FSSAI license number, then tap **"Verify via DigiLocker"** — it opens a
+consent page in a new tab; approving it fires the real API Setu call and
+the tab redirects back with the result. The backend console
+(`manage.py runserver`) logs one line per real check —
+`API Setu FSSAI check (...): HTTP <code> from https://sandbox.api-setu.in/...`
+— as on-screen evidence a call actually went out over the network. A
+"not verified" result on a made-up license number is the *expected*,
+correct outcome and is itself proof this is real: the mock accepts any
+correctly-shaped number, the live registry only confirms numbers that
+actually exist in it.
+
 ## Testing / verification
 
 ```bash
 cd contracts && npx hardhat test        # 8 tests: access control, lifecycle, hash verification
-cd backend && ./.venv/bin/python manage.py test traceability   # model smoke tests
+cd backend && ./.venv/bin/python manage.py test traceability   # model smoke tests + digilocker service tests
 cd client && flutter analyze            # static analysis, should report "No issues found!"
 ```
 
@@ -140,3 +172,10 @@ non-zero if any event fails to verify against the live chain.
   detail screens (e.g. "batches from this apiary") rather than dedicated
   single-entity GraphQL queries — a reasonable simplification at this
   MVP's data scale.
+- **FSSAI has two certificate types** ("Registration Certificate" for
+  small/petty food businesses, "Food Stuff License" for larger ones),
+  both colloquially "the FSSAI license number." `Apiary.fssai_license_number`
+  doesn't distinguish between them — `APISETU_FSSAI_ENDPOINT` picks which
+  one the whole deployment checks against (default `recer`, the tier most
+  individual beekeepers are likely to hold), rather than supporting both
+  per-apiary.

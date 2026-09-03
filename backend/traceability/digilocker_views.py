@@ -1,12 +1,14 @@
-"""Plain Django views (not GraphQL) for the DigiLocker consent-redirect
+"""Plain Django views (not GraphQL) for the FSSAI verification consent
 flow. These have to be regular HTTP endpoints rather than GraphQL fields
 because the whole point of the flow is a browser redirect out to a consent
 page and back -- see services/digilocker.py for why.
 
-mock_consent_view stands in for DigiLocker's own hosted consent page.
-callback_view is what both the mock and (once configured) a real provider
-redirect back to; it's the one place that actually resolves a
-DigilockerVerificationRequest and updates the Apiary.
+mock_consent_view is this app's own consent-capture page -- both in mock
+mode and once DIGILOCKER_USE_MOCK=False, since API Setu (unlike a real
+DigiLocker "Requester" OAuth flow) has no hosted consent page of its own
+to redirect to; approving here is what triggers the real registry lookup.
+callback_view is what it redirects back to; it's the one place that
+actually resolves a DigilockerVerificationRequest and updates the Apiary.
 """
 
 import uuid
@@ -46,12 +48,25 @@ def mock_consent_view(request):
     if verification.status != DigilockerVerificationRequest.Status.PENDING:
         return HttpResponse(f"This request has already been resolved ({verification.status}).")
 
+    from django.conf import settings
+
     apiary_name = escape(verification.apiary.name)
     license_number = escape(verification.license_number)
     callback_base = "/digilocker/callback"
 
+    # Only claim to be a mock when verify_license() will actually be
+    # backed by MockDigiLockerService -- once DIGILOCKER_USE_MOCK=False,
+    # approving here triggers a real API Setu lookup against FSSAI's
+    # registry, and the page shouldn't say "MOCK" while that happens.
+    if settings.DIGILOCKER_USE_MOCK:
+        badge = "MOCK DigiLocker &mdash; stands in for a real registry lookup"
+        intro = "An app is requesting to verify a license against DigiLocker on your behalf."
+    else:
+        badge = "FSSAI verification &mdash; via API Setu (apisetu.gov.in)"
+        intro = "An app is requesting to verify this license against the FSSAI registry on your behalf."
+
     html = f"""<!doctype html>
-<html><head><meta charset="utf-8"><title>Mock DigiLocker Consent</title>
+<html><head><meta charset="utf-8"><title>FSSAI Verification Consent</title>
 <style>
   body {{ font-family: -apple-system, sans-serif; max-width: 440px; margin: 64px auto; text-align: center; color: #222; }}
   .badge {{ display: inline-block; padding: 4px 12px; border-radius: 999px; background: #fef3c7; color: #92400e;
@@ -64,9 +79,9 @@ def mock_consent_view(request):
   .deny {{ background: #dc2626; color: white; }}
 </style></head>
 <body>
-  <div class="badge">MOCK DigiLocker &mdash; stands in for a real aggregator sandbox</div>
+  <div class="badge">{badge}</div>
   <h2>Share FSSAI license?</h2>
-  <p>An app is requesting to verify a license against DigiLocker on your behalf.</p>
+  <p>{intro}</p>
   <div class="detail">
     <div><b>Apiary:</b> {apiary_name}</div>
     <div><b>FSSAI license:</b> <code>{license_number}</code></div>
@@ -83,8 +98,10 @@ def mock_consent_view(request):
 def callback_view(request):
     """GET /digilocker/callback?request_id=...&decision=approved|denied --
     resolves the request and redirects the browser back into the Flutter
-    app, same shape a real provider's OAuth callback would use (minus the
-    authorization-code exchange, which MockDigiLockerService skips)."""
+    app. On approval this is the point where the real registry lookup
+    happens (ApiSetuFssaiService.verify_license(), or the mock check in
+    mock mode) -- there's no separate authorization-code exchange step,
+    since API Setu's FSSAI verification is a single synchronous call."""
     from django.conf import settings
 
     request_id = _parse_request_id(request.GET.get("request_id", ""))
@@ -97,7 +114,9 @@ def callback_view(request):
 
     if verification.status == DigilockerVerificationRequest.Status.PENDING:
         if decision == "approved":
-            verified = get_digilocker_service().verify_license(verification.license_number)
+            verified = get_digilocker_service().verify_license(
+                verification.license_number, email=verification.requested_by.email
+            )
             verification.status = (
                 DigilockerVerificationRequest.Status.APPROVED
                 if verified

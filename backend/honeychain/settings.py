@@ -158,11 +158,35 @@ CONTRACT_ARTIFACT_PATH = str((BASE_DIR / env("CONTRACT_ARTIFACT_PATH", "../contr
 PUBLIC_BASE_URL = env("PUBLIC_BASE_URL", "http://localhost:8080").rstrip("/")
 BACKEND_BASE_URL = env("BACKEND_BASE_URL", "http://localhost:8000").rstrip("/")
 
-# DigiLocker "Requester"-side verification of an apiary's FSSAI license
-# (see services/digilocker.py). No aggregator (Setu, Sandbox.co.in, etc.)
-# account exists for this MVP, so this is mocked by default -- swapping in
-# a real one is DIGILOCKER_USE_MOCK=False + DIGILOCKER_CLIENT_ID/
-# DIGILOCKER_CLIENT_SECRET, no code changes, same as the blockchain layer.
+# FSSAI license verification of an apiary, via API Setu (see
+# services/digilocker.py for why this isn't a DigiLocker "Requester" OAuth
+# flow). Mocked by default; DIGILOCKER_USE_MOCK=False switches to a real
+# call, no code changes. The API key/client id below default to API
+# Setu's own public sandbox demo credentials, so this works against the
+# sandbox with zero setup -- override them only for a real API Setu
+# account or the production host.
 DIGILOCKER_USE_MOCK = env_bool("DIGILOCKER_USE_MOCK", True)
-DIGILOCKER_CLIENT_ID = env("DIGILOCKER_CLIENT_ID")
-DIGILOCKER_CLIENT_SECRET = env("DIGILOCKER_CLIENT_SECRET")
+APISETU_BASE_URL = env("APISETU_BASE_URL", "https://sandbox.api-setu.in").rstrip("/")
+APISETU_API_KEY = env("APISETU_API_KEY", "demokey123456ABCD789")
+APISETU_CLIENT_ID = env("APISETU_CLIENT_ID", "in.gov.sandbox")
+# "recer" (Registration Certificate) or "fslcs" (Food Stuff License) --
+# see services/digilocker.py's module docstring for the distinction.
+APISETU_FSSAI_ENDPOINT = env("APISETU_FSSAI_ENDPOINT", "recer")
+
+# Django's own default logging config only wires up console output for its
+# own "django"/"django.server" loggers -- an app logger like
+# services/digilocker.py's ("traceability.services.digilocker") would
+# otherwise propagate to a handler-less root logger and never print
+# anything, INFO-level or not. This adds just enough to make that
+# module's "hit the real API Setu, got HTTP <code>" line show up in the
+# normal `manage.py runserver` console -- handy as live, on-screen
+# evidence during a demo that a check went out over the network rather
+# than through the mock.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "loggers": {
+        "traceability": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
+}
